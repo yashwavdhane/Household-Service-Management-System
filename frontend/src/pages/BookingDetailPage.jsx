@@ -3,6 +3,7 @@ import { useParams, Link, useLocation, useNavigate } from "react-router-dom";
 import { fetchBookingById, cancelBooking } from "../api/bookingApi";
 import { LoadingSpinner, ErrorMessage, StatusBadge, Badge, ConfirmDialog } from "../components/common/UIHelpers";
 import { useAuth } from "../context/AuthContext";
+import ReviewForm from "../components/common/ReviewForm";
 
 const BookingDetailPage = () => {
   const { id } = useParams();
@@ -134,7 +135,7 @@ const BookingDetailPage = () => {
               </div>
 
               {/* Details Grid */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "14px" }}>
                 {[
                   { label: "Date", value: fmt(b.bookingDate), icon: "📅" },
                   { label: "Time", value: b.bookingTime, icon: "🕐" },
@@ -168,7 +169,7 @@ const BookingDetailPage = () => {
             </div>
 
             {/* People Cards */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px", marginBottom: "16px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "14px", marginBottom: "16px" }}>
               {/* Customer */}
               <div style={{
                 backgroundColor: "var(--color-surface)",
@@ -220,6 +221,17 @@ const BookingDetailPage = () => {
               >
                 Cancel Booking
               </button>
+            )}
+
+            {/* ── Review Form (customer + completed bookings only) ─────── */}
+            {user?.role === "customer" && b?.status === "completed" && (
+              <div style={{ marginTop: "6px" }}>
+                <ReviewForm
+                  bookingId={b._id}
+                  providerId={b.providerId?._id || b.providerId}
+                  onSubmitted={loadBooking}
+                />
+              </div>
             )}
           </>
         ) : null}

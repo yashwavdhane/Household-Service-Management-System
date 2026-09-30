@@ -1,5 +1,8 @@
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { fetchNotifications } from "../../api/notificationApi";
+
 
 // ─── Per-role nav links ───────────────────────────────────────────────────────
 const NAV_LINKS = {
@@ -8,6 +11,7 @@ const NAV_LINKS = {
     { to: "/services", label: "Browse Services", icon: "🔍" },
     { to: "/providers", label: "Find Providers", icon: "🔧" },
     { to: "/my-bookings", label: "My Bookings", icon: "📋" },
+    { to: "/customer/profile", label: "My Profile", icon: "👤" },
   ],
   provider: [
     { to: "/dashboard/provider", label: "Dashboard", icon: "📊" },
@@ -16,9 +20,11 @@ const NAV_LINKS = {
   ],
   admin: [
     { to: "/dashboard/admin", label: "Dashboard", icon: "📊" },
+    { to: "/admin/users", label: "Users", icon: "👥" },
+    { to: "/admin/providers", label: "Providers", icon: "🔧" },
+    { to: "/admin/bookings", label: "Bookings", icon: "📋" },
     { to: "/admin/categories", label: "Categories", icon: "🏷️" },
-    { to: "/providers", label: "Providers", icon: "🔧" },
-    { to: "/admin/bookings", label: "All Bookings", icon: "📋" },
+    { to: "/admin/analytics", label: "Analytics", icon: "📈" },
   ],
 };
 
@@ -26,6 +32,20 @@ const NAV_LINKS = {
 const DashboardShell = ({ role, accentColor, icon, items, children }) => {
   const { user, logout } = useAuth();
   const location = useLocation();
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const fetchUnread = async () => {
+      try {
+        const { data } = await fetchNotifications({ limit: 1 });
+        setUnreadCount(data.unreadCount || 0);
+      } catch (err) {
+        // ignore silently for shell
+      }
+    };
+    if (user) fetchUnread();
+  }, [user, location.pathname]); // re-fetch when navigation happens (e.g. leaving notifications page)
 
   const handleLogout = async () => {
     await logout();
@@ -90,7 +110,7 @@ const DashboardShell = ({ role, accentColor, icon, items, children }) => {
           </span>
 
           {/* Nav links — hidden on small screens */}
-          <nav style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+          <nav className="hide-on-mobile" style={{ alignItems: "center", gap: "4px" }}>
             {links.map((link) => {
               const active = location.pathname === link.to;
               return (
@@ -119,11 +139,54 @@ const DashboardShell = ({ role, accentColor, icon, items, children }) => {
 
         {/* Right side */}
         <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-          <span style={{ fontSize: "13px", color: "var(--color-text-muted)" }}>
-            👋 {user?.name}
-          </span>
+          <Link
+            to="/notifications"
+            style={{
+              position: "relative",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              width: "36px", height: "36px", borderRadius: "50%",
+              backgroundColor: "rgba(15,23,42,0.4)", border: "1px solid var(--color-surface-2)",
+              textDecoration: "none", color: "var(--color-text-muted)",
+              transition: "color 0.2s, background-color 0.2s"
+            }}
+          >
+            <span style={{ fontSize: "16px" }}>🔔</span>
+            {unreadCount > 0 && (
+              <span style={{
+                position: "absolute", top: "-4px", right: "-4px",
+                backgroundColor: "#ef4444", color: "#fff",
+                fontSize: "10px", fontWeight: 700,
+                minWidth: "16px", height: "16px", borderRadius: "8px",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                padding: "0 4px", border: "2px solid var(--color-surface)"
+              }}>
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </span>
+            )}
+          </Link>
+
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginLeft: "8px" }}>
+            {user?.profileImage ? (
+              <img
+                src={user.profileImage}
+                alt={user.name}
+                style={{ width: "28px", height: "28px", borderRadius: "50%", objectFit: "cover", border: "1px solid var(--color-surface-2)" }}
+              />
+            ) : (
+              <div style={{
+                width: "28px", height: "28px", borderRadius: "50%", backgroundColor: "var(--color-primary)",
+                display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: "11px", fontWeight: 700
+              }}>
+                {user?.name ? user.name.charAt(0).toUpperCase() : "?"}
+              </div>
+            )}
+            <span style={{ fontSize: "13px", color: "var(--color-text-muted)" }}>
+              {user?.name}
+            </span>
+          </div>
           <button
             onClick={handleLogout}
+            className="hide-on-mobile"
             style={{
               padding: "6px 14px",
               borderRadius: "8px",
@@ -137,8 +200,72 @@ const DashboardShell = ({ role, accentColor, icon, items, children }) => {
           >
             Logout
           </button>
+          
+          <button
+            className="show-on-mobile"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            style={{
+              background: "none", border: "none", color: "#fff", fontSize: "20px", cursor: "pointer", padding: "4px"
+            }}
+          >
+            ☰
+          </button>
         </div>
       </header>
+
+      {/* ── Mobile Menu ──────────────────────────────────────────────────────── */}
+      {mobileMenuOpen && (
+        <div
+          className="show-on-mobile"
+          style={{
+            flexDirection: "column",
+            backgroundColor: "var(--color-surface)",
+            borderBottom: "1px solid var(--color-surface-2)",
+            padding: "16px 24px",
+            gap: "10px",
+          }}
+        >
+          {links.map((link) => (
+            <Link
+              key={link.to}
+              to={link.to}
+              onClick={() => setMobileMenuOpen(false)}
+              style={{
+                display: "flex", alignItems: "center", gap: "10px",
+                padding: "10px 12px",
+                borderRadius: "8px",
+                textDecoration: "none",
+                color: location.pathname === link.to ? "#fff" : "var(--color-text-muted)",
+                backgroundColor: location.pathname === link.to ? `${accentColor}33` : "transparent",
+                fontSize: "14px", fontWeight: location.pathname === link.to ? 600 : 400,
+              }}
+            >
+              <span>{link.icon}</span>
+              <span>{link.label}</span>
+            </Link>
+          ))}
+          <button
+            onClick={handleLogout}
+            style={{
+              display: "flex", alignItems: "center", gap: "10px",
+              padding: "10px 12px",
+              borderRadius: "8px",
+              textDecoration: "none",
+              color: "#ef4444",
+              backgroundColor: "rgba(239,68,68,0.1)",
+              border: "none",
+              fontSize: "14px", fontWeight: 600,
+              cursor: "pointer",
+              textAlign: "left",
+              fontFamily: "inherit",
+              marginTop: "10px",
+            }}
+          >
+            <span>🚪</span>
+            <span>Logout</span>
+          </button>
+        </div>
+      )}
 
       {/* ── Main Content ────────────────────────────────────────────────────── */}
       <main

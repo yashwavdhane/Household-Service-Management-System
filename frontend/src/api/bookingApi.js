@@ -7,6 +7,10 @@ export const createBooking = (data) => axiosInstance.post("/bookings", data);
 // Returns: { stats: {total,pending,accepted,in_progress,completed,cancelled,rejected,totalSpent}, recentBookings }
 export const fetchCustomerStats = () => axiosInstance.get("/bookings/stats");
 
+// ─── GET provider dashboard stats ────────────────────────────────────────────
+// Returns: { stats: {total,pending,...,totalEarned}, profile: {...}, recentRequests }
+export const fetchProviderStats = () => axiosInstance.get("/bookings/provider-stats");
+
 // ─── GET my bookings (customer sees own, provider sees theirs) ────────────────
 // Optional: pass { params: { status: "pending" } } to filter
 export const fetchMyBookings = (params = {}) =>

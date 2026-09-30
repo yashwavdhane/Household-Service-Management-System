@@ -11,6 +11,7 @@ import ProviderDetailPage from "../pages/ProviderDetailPage";
 
 // ── Dashboard pages ───────────────────────────────────────────────────────────
 import CustomerDashboard from "../pages/dashboard/CustomerDashboard";
+import CustomerProfilePage from "../pages/dashboard/CustomerProfilePage";
 import ProviderDashboard from "../pages/dashboard/ProviderDashboard";
 import AdminDashboard from "../pages/dashboard/AdminDashboard";
 
@@ -20,6 +21,12 @@ import ProviderBookingsPage from "../pages/dashboard/ProviderBookingsPage";
 
 // ── Admin sub-pages ───────────────────────────────────────────────────────────
 import AdminCategoriesPage from "../pages/dashboard/AdminCategoriesPage";
+import ManageUsers from "../pages/dashboard/ManageUsers";
+import ManageProviders from "../pages/dashboard/ManageProviders";
+import ManageBookings from "../pages/dashboard/ManageBookings";
+import AnalyticsPage from "../pages/dashboard/AnalyticsPage";
+import NotificationsPage from "../pages/dashboard/NotificationsPage";
+
 
 // ── Booking pages ─────────────────────────────────────────────────────────────
 import BookingPage from "../pages/BookingPage";
@@ -63,6 +70,16 @@ const AppRoutes = () => {
           <ProtectedRoute>
             <RoleRoute roles={["customer", "admin"]}>
               <CustomerDashboard />
+            </RoleRoute>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/customer/profile"
+        element={
+          <ProtectedRoute>
+            <RoleRoute roles={["customer"]}>
+              <CustomerProfilePage />
             </RoleRoute>
           </ProtectedRoute>
         }
@@ -141,6 +158,46 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/admin/users"
+        element={
+          <ProtectedRoute>
+            <RoleRoute roles={["admin"]}>
+              <ManageUsers />
+            </RoleRoute>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/providers"
+        element={
+          <ProtectedRoute>
+            <RoleRoute roles={["admin"]}>
+              <ManageProviders />
+            </RoleRoute>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/bookings"
+        element={
+          <ProtectedRoute>
+            <RoleRoute roles={["admin"]}>
+              <ManageBookings />
+            </RoleRoute>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/analytics"
+        element={
+          <ProtectedRoute>
+            <RoleRoute roles={["admin"]}>
+              <AnalyticsPage />
+            </RoleRoute>
+          </ProtectedRoute>
+        }
+      />
 
       {/* ── Protected: Booking Detail (customer + provider + admin) ───── */}
       <Route
@@ -150,6 +207,16 @@ const AppRoutes = () => {
             <RoleRoute roles={["customer", "provider", "admin"]}>
               <BookingDetailPage />
             </RoleRoute>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ── Protected: Notifications (All auth users) ─────────────────────── */}
+      <Route
+        path="/notifications"
+        element={
+          <ProtectedRoute>
+            <NotificationsPage />
           </ProtectedRoute>
         }
       />

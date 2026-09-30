@@ -17,8 +17,10 @@ router.use("/auth",       require("./authRoutes"));
 router.use("/categories", require("./categoryRoutes"));
 router.use("/providers",  require("./providerRoutes"));
 router.use("/bookings",   require("./bookingRoutes"));
+router.use("/admin",      require("./adminRoutes"));
+router.use("/reviews",    require("./reviewRoutes"));
+router.use("/notifications", require("./notificationRoutes"));
+router.use("/upload",        require("./uploadRoutes"));
 
-// Future routes (Phase 5+)
-// router.use("/reviews",  require("./reviewRoutes"));
 
 module.exports = router;

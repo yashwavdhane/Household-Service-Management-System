@@ -88,3 +88,20 @@ a,
 button {
   transition: all 0.2s ease;
 }
+
+/* ─── Responsive Utilities ─────────────────────────────────────────────────── */
+.hide-on-mobile {
+  display: none !important;
+}
+.show-on-mobile {
+  display: flex !important;
+}
+
+@media (min-width: 768px) {
+  .hide-on-mobile {
+    display: flex !important;
+  }
+  .show-on-mobile {
+    display: none !important;
+  }
+}

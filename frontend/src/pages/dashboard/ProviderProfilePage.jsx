@@ -1,10 +1,15 @@
 import { useState, useEffect } from "react";
 import { fetchMyProviderProfile, updateProviderProfile, updateAvailability } from "../../api/providerApi";
 import { fetchCategories } from "../../api/categoryApi";
+import { updateProfile } from "../../api/authApi";
+import { useAuth } from "../../context/AuthContext";
 import DashboardShell from "../../components/common/DashboardShell";
+import ProfileImageUpload from "../../components/common/ProfileImageUpload";
 import { LoadingSpinner, ErrorMessage, StarRating, Badge } from "../../components/common/UIHelpers";
 
+
 const ProviderProfilePage = () => {
+  const { user, setUser } = useAuth();
   const [profile, setProfile] = useState(null);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -13,6 +18,9 @@ const ProviderProfilePage = () => {
   const [success, setSuccess] = useState("");
 
   const [form, setForm] = useState({
+    name: "",
+    phone: "",
+    profileImage: "",
     serviceCategories: [],
     skills: "",
     experience: "",
@@ -32,6 +40,9 @@ const ProviderProfilePage = () => {
       setProfile(p);
       setCategories(catsRes.data.categories || []);
       setForm({
+        name: user?.name || "",
+        phone: user?.phone || "",
+        profileImage: user?.profileImage || "",
         serviceCategories: p.serviceCategories?.map((c) => c._id || c) || [],
         skills: p.skills?.join(", ") || "",
         experience: p.experience?.toString() || "",
@@ -56,20 +67,41 @@ const ProviderProfilePage = () => {
     }));
   };
 
+  const handleImageUpload = async (url) => {
+    try {
+      const { data } = await updateProfile({ profileImage: url });
+      setUser(data.user);
+      setForm((p) => ({ ...p, profileImage: url }));
+      setSuccess("Profile image updated successfully!");
+      setTimeout(() => setSuccess(""), 3000);
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to update profile image.");
+    }
+  };
+
   const handleSave = async (e) => {
     e.preventDefault();
     setSaving(true);
     setError("");
     setSuccess("");
     try {
-      const { data } = await updateProviderProfile({
+      // 1. Update basic user info
+      const { data: authData } = await updateProfile({
+        name: form.name,
+        phone: form.phone,
+      });
+      setUser(authData.user);
+
+      // 2. Update provider specific info
+      const { data: provData } = await updateProviderProfile({
         serviceCategories: form.serviceCategories,
         skills: form.skills,
         experience: form.experience ? parseInt(form.experience) : 0,
         description: form.description,
         serviceArea: form.serviceArea,
       });
-      setProfile(data.provider);
+      setProfile(provData.provider);
+      
       setSuccess("Profile updated successfully!");
       setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
@@ -229,6 +261,53 @@ const ProviderProfilePage = () => {
                   gap: "20px",
                 }}
               >
+                {/* ── Basic Info ── */}
+                <div>
+                  <label style={labelStyle}>Profile Image</label>
+                  <ProfileImageUpload
+                    currentImage={form.profileImage}
+                    name={form.name}
+                    onImageUpload={handleImageUpload}
+                  />
+                </div>
+                
+                <div>
+                  <label htmlFor="pp-email" style={labelStyle}>Email (Cannot be changed)</label>
+                  <input
+                    id="pp-email"
+                    type="email"
+                    value={user?.email || ""}
+                    disabled
+                    style={{ ...inputStyle, opacity: 0.6, cursor: "not-allowed" }}
+                  />
+                </div>
+                
+                <div>
+                  <label htmlFor="pp-name" style={labelStyle}>Full Name</label>
+                  <input
+                    id="pp-name"
+                    type="text"
+                    value={form.name}
+                    onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+                    required
+                    style={inputStyle}
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="pp-phone" style={labelStyle}>Phone Number</label>
+                  <input
+                    id="pp-phone"
+                    type="text"
+                    value={form.phone}
+                    onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))}
+                    style={inputStyle}
+                  />
+                </div>
+
+                <hr style={{ border: "none", borderTop: "1px solid var(--color-surface-2)", margin: "10px 0" }} />
+
+                {/* ── Professional Info ── */}
                 {/* Service Categories */}
                 <div>
                   <label style={labelStyle}>Service Categories</label>

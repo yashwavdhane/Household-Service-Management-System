@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { fetchProviderById } from "../api/providerApi";
 import { LoadingSpinner, ErrorMessage, StarRating, Badge } from "../components/common/UIHelpers";
 import { useAuth } from "../context/AuthContext";
-
+import ReviewsSection from "../components/common/ReviewsSection";
 
 const ProviderDetailPage = () => {
   const { id } = useParams();
@@ -161,7 +161,7 @@ const ProviderDetailPage = () => {
             </div>
 
             {/* ── Detail Cards Grid ──────────────────────────────────── */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
               {/* About */}
               <div
                 style={{
@@ -223,6 +223,32 @@ const ProviderDetailPage = () => {
                   <p style={{ fontSize: "13px", color: "var(--color-text-muted)" }}>No skills listed yet.</p>
                 )}
               </div>
+            </div>
+
+            {/* ── Reviews Section ──────────────────────────────── */}
+            <div
+              style={{
+                marginTop: "8px",
+                backgroundColor: "var(--color-surface)",
+                border: "1px solid var(--color-surface-2)",
+                borderRadius: "16px",
+                padding: "24px",
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "18px" }}>
+                <div>
+                  <h2 style={{ fontSize: "16px", fontWeight: 700, color: "#fff", marginBottom: "3px" }}>Customer Reviews</h2>
+                  <p style={{ fontSize: "12px", color: "var(--color-text-muted)" }}>
+                    {provider.totalReviews > 0
+                      ? `${provider.totalReviews} review${provider.totalReviews !== 1 ? "s" : ""} · ${provider.averageRating?.toFixed(1)} average`
+                      : "No reviews yet"}
+                  </p>
+                </div>
+              </div>
+              <ReviewsSection
+                providerId={provider._id}
+                profile={{ averageRating: provider.averageRating, totalReviews: provider.totalReviews }}
+              />
             </div>
           </>
         ) : null}

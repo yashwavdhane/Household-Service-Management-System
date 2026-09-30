@@ -7,6 +7,7 @@ const {
   updateBookingStatus,
   cancelBooking,
   getCustomerStats,
+  getProviderStats,
 } = require("../controllers/bookingController");
 const { protect, authorize } = require("../middleware/auth");
 
@@ -18,6 +19,9 @@ router.post("/", authorize("customer"), createBooking);
 
 // ─── Customer: dashboard stats (must be before /:id) ─────────────────────────
 router.get("/stats", authorize("customer"), getCustomerStats);
+
+// ─── Provider: dashboard stats (must be before /:id) ─────────────────────────
+router.get("/provider-stats", authorize("provider"), getProviderStats);
 
 // ─── Customer + Provider + Admin: view own bookings ──────────────────────────
 router.get("/my-bookings", authorize("customer", "provider", "admin"), getMyBookings);

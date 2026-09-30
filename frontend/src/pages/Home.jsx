@@ -321,8 +321,8 @@ const Home = () => {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(4, 1fr)",
-              gap: "14px",
+              gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+              gap: "16px",
             }}
           >
             {services.map((service) => (
@@ -387,8 +387,8 @@ const Home = () => {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(3, 1fr)",
-              gap: "16px",
+              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+              gap: "20px",
             }}
           >
             {features.map((feature) => (
@@ -432,6 +432,68 @@ const Home = () => {
         </div>
       </section>
 
+      {/* ── How It Works ── */}
+      <section style={{ padding: "40px 24px" }}>
+        <div style={{ maxWidth: "1000px", margin: "0 auto" }}>
+          <h2
+            style={{
+              fontSize: "clamp(1.4rem, 3vw, 1.9rem)",
+              fontWeight: 700,
+              color: "#fff",
+              textAlign: "center",
+              marginBottom: "6px",
+            }}
+          >
+            How It Works
+          </h2>
+          <p
+            style={{
+              textAlign: "center",
+              color: "var(--color-text-muted)",
+              fontSize: "14px",
+              marginBottom: "40px",
+            }}
+          >
+            Get your service done in 3 simple steps
+          </p>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+              gap: "30px",
+              position: "relative",
+            }}
+          >
+            {[
+              { step: "01", title: "Book a Service", desc: "Choose a category and tell us what you need." },
+              { step: "02", title: "Get Matched", desc: "We notify the best professionals in your area." },
+              { step: "03", title: "Job Done", desc: "The expert completes the job. Pay and review." },
+            ].map((item, i) => (
+              <div key={item.step} style={{ textAlign: "center", position: "relative", padding: "20px" }}>
+                <div
+                  style={{
+                    width: "60px", height: "60px", borderRadius: "50%",
+                    background: "var(--color-surface)", border: "2px solid var(--color-primary)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: "20px", fontWeight: 800, color: "var(--color-primary-light)",
+                    margin: "0 auto 20px",
+                  }}
+                >
+                  {item.step}
+                </div>
+                <h3 style={{ fontSize: "18px", fontWeight: 700, color: "#fff", marginBottom: "10px" }}>
+                  {item.title}
+                </h3>
+                <p style={{ fontSize: "14px", color: "var(--color-text-muted)", lineHeight: 1.6 }}>
+                  {item.desc}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ── Stats Banner ── */}
       <section style={{ padding: "40px 24px 50px" }}>
         <div
@@ -459,8 +521,8 @@ const Home = () => {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(3, 1fr)",
-              gap: "20px",
+              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+              gap: "30px",
             }}
           >
             {[
