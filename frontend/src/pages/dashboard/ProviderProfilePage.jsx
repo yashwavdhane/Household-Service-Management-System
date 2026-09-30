@@ -43,7 +43,7 @@ const ProviderProfilePage = () => {
         name: user?.name || "",
         phone: user?.phone || "",
         profileImage: user?.profileImage || "",
-        serviceCategories: p.serviceCategories?.map((c) => c._id || c) || [],
+        serviceCategories: p.serviceCategories?.map((c) => (typeof c === 'object' && c !== null ? (c._id || c.id) : c)) || [],
         skills: p.skills?.join(", ") || "",
         experience: p.experience?.toString() || "",
         description: p.description || "",
@@ -101,6 +101,10 @@ const ProviderProfilePage = () => {
         serviceArea: form.serviceArea,
       });
       setProfile(provData.provider);
+      setForm((prev) => ({
+        ...prev,
+        serviceCategories: provData.provider.serviceCategories?.map((c) => (typeof c === 'object' && c !== null ? (c._id || c.id) : c)) || [],
+      }));
       
       setSuccess("Profile updated successfully!");
       setTimeout(() => setSuccess(""), 3000);
@@ -313,7 +317,7 @@ const ProviderProfilePage = () => {
                   <label style={labelStyle}>Service Categories</label>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                     {categories.map((cat) => {
-                      const selected = form.serviceCategories.includes(cat._id);
+                      const selected = form.serviceCategories.includes(cat._id) || form.serviceCategories.includes(cat.id);
                       return (
                         <button
                           key={cat._id}

@@ -212,7 +212,7 @@ const BookingPage = () => {
                     ) : (
                       <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                         {categories.map((cat) => {
-                          const sel = form.serviceCategoryId === cat._id;
+                          const sel = form.serviceCategoryId === cat._id || form.serviceCategoryId === cat.id;
                           return (
                             <button
                               key={cat._id}

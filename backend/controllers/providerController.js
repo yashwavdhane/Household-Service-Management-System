@@ -77,7 +77,15 @@ const updateMyProfile = async (req, res) => {
   const { serviceCategories, skills, experience, description, serviceArea } = req.body;
 
   const updateData = {};
-  if (serviceCategories !== undefined) updateData.serviceCategories = serviceCategories;
+  if (serviceCategories !== undefined) {
+    if (Array.isArray(serviceCategories)) {
+      updateData.serviceCategories = serviceCategories.map(c => typeof c === 'object' && c !== null ? (c._id || c.id) : c).filter(Boolean);
+    } else if (typeof serviceCategories === 'string') {
+      updateData.serviceCategories = serviceCategories.split(',').map(s => s.trim()).filter(Boolean);
+    } else {
+      updateData.serviceCategories = [];
+    }
+  }
   if (skills !== undefined) {
     // Accept comma-separated string or array
     updateData.skills = Array.isArray(skills)
