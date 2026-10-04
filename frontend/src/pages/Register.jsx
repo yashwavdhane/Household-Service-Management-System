@@ -55,8 +55,8 @@ const Register = () => {
     if (!form.email.trim() || !/^\S+@\S+\.\S+$/.test(form.email)) {
       errs.email = "Enter a valid email address";
     }
-    if (form.phone && !/^[0-9]{10}$/.test(form.phone.trim())) {
-      errs.phone = "Phone must be exactly 10 digits";
+    if (!form.phone.trim() || !/^[0-9]{10}$/.test(form.phone.trim())) {
+      errs.phone = "Phone number is required and must be exactly 10 digits";
     }
     if (!form.password || form.password.length < 6) {
       errs.password = "Password must be at least 6 characters";
@@ -283,8 +283,7 @@ const Register = () => {
           {/* Phone */}
           <div style={{ marginBottom: "16px" }}>
             <label htmlFor="reg-phone" style={labelStyle}>
-              Phone Number{" "}
-              <span style={{ opacity: 0.5, fontSize: "11px" }}>(optional)</span>
+              Phone Number *
             </label>
             <input
               id="reg-phone"

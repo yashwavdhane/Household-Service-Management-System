@@ -2,6 +2,7 @@ const Booking = require("../models/Booking");
 const ProviderProfile = require("../models/ProviderProfile");
 const ServiceCategory = require("../models/ServiceCategory");
 const Notification = require("../models/Notification");
+const ProviderService = require("../models/ProviderService");
 
 // ─── Helper: populate a booking query ────────────────────────────────────────
 const populateBooking = (query) =>
@@ -9,10 +10,11 @@ const populateBooking = (query) =>
     .populate("customerId", "name email phone profileImage")
     .populate({
       path: "providerId",
-      select: "userId serviceCategories experience serviceArea averageRating isVerified",
+      select: "userId serviceCategories experience serviceArea address averageRating isVerified",
       populate: { path: "userId", select: "name email phone profileImage" },
     })
-    .populate("serviceCategoryId", "name image description");
+    .populate("serviceCategoryId", "name image description")
+    .populate("providerServiceId", "serviceName price pricingType");
 
 // ─────────────────────────────────────────────────────────────────────────────
 // POST /api/bookings
@@ -20,7 +22,16 @@ const populateBooking = (query) =>
 // @access Customer only
 // ─────────────────────────────────────────────────────────────────────────────
 const createBooking = async (req, res) => {
-  const { providerId, serviceCategoryId, bookingDate, bookingTime, address, description, estimatedPrice } = req.body;
+  const {
+    providerId,
+    serviceCategoryId,
+    providerServiceId, // optional: specific ProviderService offering
+    bookingDate,
+    bookingTime,
+    address,
+    description,
+    estimatedPrice,
+  } = req.body;
 
   // ── Validation ──────────────────────────────────────────────────────────────
   if (!providerId || !serviceCategoryId || !bookingDate || !bookingTime || !address) {
@@ -74,16 +85,47 @@ const createBooking = async (req, res) => {
     throw new Error("This provider does not offer the selected service category");
   }
 
+  // ── Optional: validate ProviderService and build snapshot ─────────────────
+  let resolvedProviderServiceId = null;
+  let serviceNameSnapshot = "";
+  let pricingTypeSnapshot = "";
+  let resolvedEstimatedPrice = estimatedPrice ? parseFloat(estimatedPrice) : null;
+
+  if (providerServiceId) {
+    const svc = await ProviderService.findById(providerServiceId);
+    if (!svc || !svc.isActive) {
+      res.status(404);
+      throw new Error("Selected service offering not found or is inactive");
+    }
+    // Verify the service belongs to this provider and matches the category
+    if (svc.providerId.toString() !== providerId.toString()) {
+      res.status(400);
+      throw new Error("Service offering does not belong to the selected provider");
+    }
+    if (svc.serviceCategoryId.toString() !== serviceCategoryId.toString()) {
+      res.status(400);
+      throw new Error("Service offering category does not match the selected service category");
+    }
+    // Use the provider's listed price as estimated price (never trust frontend override)
+    resolvedProviderServiceId = svc._id;
+    serviceNameSnapshot = svc.serviceName;
+    pricingTypeSnapshot = svc.pricingType;
+    resolvedEstimatedPrice = svc.price; // always use backend price
+  }
+
   // Create booking
   const booking = await Booking.create({
     customerId: req.user._id,
     providerId,
     serviceCategoryId,
+    providerServiceId: resolvedProviderServiceId,
+    serviceNameSnapshot,
+    pricingTypeSnapshot,
     bookingDate,
     bookingTime,
     address: address.trim(),
     description: description?.trim() || "",
-    estimatedPrice: estimatedPrice ? parseFloat(estimatedPrice) : null,
+    estimatedPrice: resolvedEstimatedPrice,
     status: "pending",
   });
 
@@ -387,7 +429,7 @@ const getProviderStats = async (req, res) => {
     return res.status(200).json({
       success: true,
       stats: { total: 0, pending: 0, accepted: 0, in_progress: 0, completed: 0, cancelled: 0, rejected: 0, totalEarned: 0 },
-      profile: { averageRating: 0, totalReviews: 0, availability: true, isVerified: false, serviceCategories: [], skills: [], experience: 0, serviceArea: "", description: "" },
+      profile: { averageRating: 0, totalReviews: 0, availability: true, isVerified: false, serviceCategories: [], skills: [], experience: 0, serviceArea: "", address: {}, description: "" },
       recentRequests: [],
     });
   }
@@ -439,6 +481,7 @@ const getProviderStats = async (req, res) => {
     stats,
     profile: {
       _id: profile._id,
+      userId: profile.userId, // populated: { name, email, phone, profileImage }
       averageRating: profile.averageRating,
       totalReviews: profile.totalReviews,
       availability: profile.availability,
@@ -447,6 +490,7 @@ const getProviderStats = async (req, res) => {
       skills: profile.skills,
       experience: profile.experience,
       serviceArea: profile.serviceArea,
+      address: profile.address,
       description: profile.description,
     },
     recentRequests,

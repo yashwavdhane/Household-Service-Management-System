@@ -13,14 +13,16 @@ router.get("/health", (req, res) => {
 });
 
 // ─── Route Mounts ────────────────────────────────────────────────────────────
-router.use("/auth",       require("./authRoutes"));
-router.use("/categories", require("./categoryRoutes"));
-router.use("/providers",  require("./providerRoutes"));
-router.use("/bookings",   require("./bookingRoutes"));
-router.use("/admin",      require("./adminRoutes"));
-router.use("/reviews",    require("./reviewRoutes"));
-router.use("/notifications", require("./notificationRoutes"));
-router.use("/upload",        require("./uploadRoutes"));
+router.use("/auth",              require("./authRoutes"));
+router.use("/categories",        require("./categoryRoutes"));
+router.use("/providers",         require("./providerRoutes"));
+router.use("/bookings",          require("./bookingRoutes"));
+router.use("/admin",             require("./adminRoutes"));
+router.use("/reviews",           require("./reviewRoutes"));
+router.use("/notifications",     require("./notificationRoutes"));
+router.use("/upload",            require("./uploadRoutes"));
+router.use("/provider-services", require("./providerServiceRoutes"));
+router.use("/messages",          require("./messageRoutes"));
 
 
 module.exports = router;

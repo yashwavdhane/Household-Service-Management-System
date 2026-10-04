@@ -37,6 +37,10 @@ const Home = () => {
     { icon: "❄️", name: "AC Repair" },
     { icon: "🌿", name: "Gardening" },
     { icon: "🛡️", name: "Security" },
+    { icon: "🛠️", name: "Appliance Repair" },
+    { icon: "🐜", name: "Pest Control" },
+    { icon: "📦", name: "Packers & Movers" },
+    { icon: "🚗", name: "Car Wash" },
   ];
 
   const statusColor =

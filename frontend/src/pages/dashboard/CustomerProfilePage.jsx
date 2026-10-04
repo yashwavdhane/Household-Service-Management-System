@@ -5,7 +5,7 @@ import { useAuth } from "../../context/AuthContext";
 import ProfileImageUpload from "../../components/common/ProfileImageUpload";
 
 const CustomerProfilePage = () => {
-  const { user, setUser } = useAuth();
+  const { user, updateUser } = useAuth();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -14,6 +14,14 @@ const CustomerProfilePage = () => {
     name: "",
     phone: "",
     profileImage: "",
+    flatStreet: "",
+    area: "",
+    city: "",
+    state: "",
+    pinCode: "",
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
   });
 
   useEffect(() => {
@@ -22,6 +30,11 @@ const CustomerProfilePage = () => {
         name: user.name || "",
         phone: user.phone || "",
         profileImage: user.profileImage || "",
+        flatStreet: user.address?.flatStreet || "",
+        area: user.address?.area || "",
+        city: user.address?.city || "",
+        state: user.address?.state || "",
+        pinCode: user.address?.pinCode || "",
       });
     }
   }, [user]);
@@ -29,7 +42,7 @@ const CustomerProfilePage = () => {
   const handleImageUpload = async (url) => {
     try {
       const { data } = await updateProfile({ profileImage: url });
-      setUser(data.user);
+      updateUser(data.user);
       setForm((p) => ({ ...p, profileImage: url }));
       setSuccess("Profile image updated successfully!");
       setTimeout(() => setSuccess(""), 3000);
@@ -44,14 +57,39 @@ const CustomerProfilePage = () => {
     setError("");
     setSuccess("");
     try {
+      // If trying to change password, check match
+      if (form.newPassword) {
+        if (form.newPassword !== form.confirmPassword) {
+          setError("New passwords do not match.");
+          setSaving(false);
+          return;
+        }
+        if (form.newPassword.length < 6) {
+          setError("New password must be at least 6 characters.");
+          setSaving(false);
+          return;
+        }
+      }
+
       const { data } = await updateProfile({
         name: form.name,
         phone: form.phone,
+        flatStreet: form.flatStreet,
+        area: form.area,
+        city: form.city,
+        state: form.state,
+        pinCode: form.pinCode,
+        ...(form.newPassword && {
+          currentPassword: form.currentPassword,
+          newPassword: form.newPassword,
+        }),
       });
-      setUser(data.user);
+      updateUser(data.user);
       setSuccess("Profile updated successfully!");
+      setForm((p) => ({ ...p, currentPassword: "", newPassword: "", confirmPassword: "" }));
       setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
+      console.error("CATCH BLOCK TRIGGERED. err:", err.message, "response data:", JSON.stringify(err.response?.data));
       setError(err.response?.data?.message || "Failed to update profile.");
     } finally {
       setSaving(false);
@@ -164,6 +202,112 @@ const CustomerProfilePage = () => {
                 onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))}
                 style={inputStyle}
               />
+            </div>
+
+            <hr style={{ border: "none", borderTop: "1px solid var(--color-surface-2)", margin: "4px 0" }} />
+
+            <h3 style={{ fontSize: "14px", fontWeight: 700, color: "#fff", marginBottom: "0" }}>Address Details</h3>
+            
+            <div>
+              <label htmlFor="cp-flat" style={labelStyle}>House / Flat Number & Street Address</label>
+              <input
+                id="cp-flat"
+                type="text"
+                value={form.flatStreet}
+                onChange={(e) => setForm((p) => ({ ...p, flatStreet: e.target.value }))}
+                placeholder="e.g. Flat 12, Shivaji Nagar Road"
+                style={inputStyle}
+              />
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
+              <div>
+                <label htmlFor="cp-area" style={labelStyle}>Area / Locality</label>
+                <input
+                  id="cp-area"
+                  type="text"
+                  value={form.area}
+                  onChange={(e) => setForm((p) => ({ ...p, area: e.target.value }))}
+                  placeholder="e.g. Andheri West"
+                  style={inputStyle}
+                />
+              </div>
+              <div>
+                <label htmlFor="cp-pincode" style={labelStyle}>PIN Code</label>
+                <input
+                  id="cp-pincode"
+                  type="text"
+                  maxLength={6}
+                  value={form.pinCode}
+                  onChange={(e) => setForm((p) => ({ ...p, pinCode: e.target.value.replace(/\D/g, "").slice(0, 6) }))}
+                  placeholder="6-digit PIN"
+                  style={inputStyle}
+                />
+              </div>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
+              <div>
+                <label htmlFor="cp-city" style={labelStyle}>City</label>
+                <input
+                  id="cp-city"
+                  type="text"
+                  value={form.city}
+                  onChange={(e) => setForm((p) => ({ ...p, city: e.target.value }))}
+                  placeholder="e.g. Mumbai"
+                  style={inputStyle}
+                />
+              </div>
+              <div>
+                <label htmlFor="cp-state" style={labelStyle}>State</label>
+                <input
+                  id="cp-state"
+                  type="text"
+                  value={form.state}
+                  onChange={(e) => setForm((p) => ({ ...p, state: e.target.value }))}
+                  placeholder="e.g. Maharashtra"
+                  style={inputStyle}
+                />
+              </div>
+            </div>
+
+            <hr style={{ border: "none", borderTop: "1px solid var(--color-surface-2)", margin: "4px 0" }} />
+
+            <h3 style={{ fontSize: "14px", fontWeight: 700, color: "#fff", marginBottom: "0" }}>Change Password</h3>
+            <p style={{ fontSize: "12px", color: "var(--color-text-muted)", marginTop: "-12px", marginBottom: "16px" }}>Leave blank to keep your current password.</p>
+
+            <div>
+              <label htmlFor="cp-current-pwd" style={labelStyle}>Current Password</label>
+              <input
+                id="cp-current-pwd"
+                type="password"
+                value={form.currentPassword}
+                onChange={(e) => setForm((p) => ({ ...p, currentPassword: e.target.value }))}
+                style={inputStyle}
+              />
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
+              <div>
+                <label htmlFor="cp-new-pwd" style={labelStyle}>New Password</label>
+                <input
+                  id="cp-new-pwd"
+                  type="password"
+                  value={form.newPassword}
+                  onChange={(e) => setForm((p) => ({ ...p, newPassword: e.target.value }))}
+                  style={inputStyle}
+                />
+              </div>
+              <div>
+                <label htmlFor="cp-confirm-pwd" style={labelStyle}>Confirm New Password</label>
+                <input
+                  id="cp-confirm-pwd"
+                  type="password"
+                  value={form.confirmPassword}
+                  onChange={(e) => setForm((p) => ({ ...p, confirmPassword: e.target.value }))}
+                  style={inputStyle}
+                />
+              </div>
             </div>
 
             {/* Save button */}

@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 // ── Public pages ──────────────────────────────────────────────────────────────
 import Home from "../pages/Home";
 import Login from "../pages/Login";
+import ForgotPassword from "../pages/ForgotPassword";
 import Register from "../pages/Register";
 import ServicesPage from "../pages/ServicesPage";
 import ProvidersPage from "../pages/ProvidersPage";
@@ -18,14 +19,17 @@ import AdminDashboard from "../pages/dashboard/AdminDashboard";
 // ── Provider sub-pages ────────────────────────────────────────────────────────
 import ProviderProfilePage from "../pages/dashboard/ProviderProfilePage";
 import ProviderBookingsPage from "../pages/dashboard/ProviderBookingsPage";
+import ProviderServicesPage from "../pages/dashboard/ProviderServicesPage";
 
 // ── Admin sub-pages ───────────────────────────────────────────────────────────
 import AdminCategoriesPage from "../pages/dashboard/AdminCategoriesPage";
+import AdminProfilePage from "../pages/dashboard/AdminProfilePage";
 import ManageUsers from "../pages/dashboard/ManageUsers";
 import ManageProviders from "../pages/dashboard/ManageProviders";
 import ManageBookings from "../pages/dashboard/ManageBookings";
 import AnalyticsPage from "../pages/dashboard/AnalyticsPage";
 import NotificationsPage from "../pages/dashboard/NotificationsPage";
+import AdminCommunications from "../pages/dashboard/AdminCommunications";
 
 
 // ── Booking pages ─────────────────────────────────────────────────────────────
@@ -57,6 +61,10 @@ const AppRoutes = () => {
       <Route
         path="/login"
         element={isAuthenticated ? <Navigate to={roleDash(user?.role)} replace /> : <Login />}
+      />
+      <Route
+        path="/forgot-password"
+        element={isAuthenticated ? <Navigate to={roleDash(user?.role)} replace /> : <ForgotPassword />}
       />
       <Route
         path="/register"
@@ -136,6 +144,16 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/provider/services"
+        element={
+          <ProtectedRoute>
+            <RoleRoute roles={["provider"]}>
+              <ProviderServicesPage />
+            </RoleRoute>
+          </ProtectedRoute>
+        }
+      />
 
       {/* ── Protected: Admin ─────────────────────────────────────────────── */}
       <Route
@@ -154,6 +172,16 @@ const AppRoutes = () => {
           <ProtectedRoute>
             <RoleRoute roles={["admin"]}>
               <AdminCategoriesPage />
+            </RoleRoute>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/settings"
+        element={
+          <ProtectedRoute>
+            <RoleRoute roles={["admin"]}>
+              <AdminProfilePage />
             </RoleRoute>
           </ProtectedRoute>
         }
@@ -194,6 +222,16 @@ const AppRoutes = () => {
           <ProtectedRoute>
             <RoleRoute roles={["admin"]}>
               <AnalyticsPage />
+            </RoleRoute>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/communications"
+        element={
+          <ProtectedRoute>
+            <RoleRoute roles={["admin"]}>
+              <AdminCommunications />
             </RoleRoute>
           </ProtectedRoute>
         }

@@ -30,11 +30,51 @@ const providerProfileSchema = new mongoose.Schema(
       default: "",
       maxlength: [1000, "Description cannot exceed 1000 characters"],
     },
+    // ── Legacy single-field service area (kept for backwards compat) ──────────
     serviceArea: {
       type: String,
       trim: true,
       default: "",
       maxlength: [200, "Service area cannot exceed 200 characters"],
+    },
+    // ── Structured address fields ─────────────────────────────────────────────
+    address: {
+      flatStreet: {
+        type: String,
+        trim: true,
+        default: "",
+        maxlength: [200, "Street address cannot exceed 200 characters"],
+      },
+      area: {
+        type: String,
+        trim: true,
+        default: "",
+        maxlength: [100, "Area/Locality cannot exceed 100 characters"],
+      },
+      city: {
+        type: String,
+        trim: true,
+        default: "",
+        maxlength: [100, "City cannot exceed 100 characters"],
+      },
+      state: {
+        type: String,
+        trim: true,
+        default: "",
+        maxlength: [100, "State cannot exceed 100 characters"],
+      },
+      pinCode: {
+        type: String,
+        trim: true,
+        default: "",
+        match: [/^(\d{6})?$/, "PIN code must be exactly 6 digits"],
+      },
+      landmark: {
+        type: String,
+        trim: true,
+        default: "",
+        maxlength: [200, "Landmark cannot exceed 200 characters"],
+      },
     },
     availability: {
       type: Boolean,
@@ -64,6 +104,7 @@ providerProfileSchema.index({ serviceCategories: 1 });
 providerProfileSchema.index({ serviceArea: "text" });
 providerProfileSchema.index({ averageRating: -1 });
 providerProfileSchema.index({ availability: 1 });
+providerProfileSchema.index({ "address.pinCode": 1 }); // fast PIN code lookups
 
 const ProviderProfile = mongoose.model("ProviderProfile", providerProfileSchema);
 module.exports = ProviderProfile;

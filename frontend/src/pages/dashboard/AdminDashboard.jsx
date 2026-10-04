@@ -16,8 +16,10 @@ const StatCard = ({ icon, label, value, color, sub, to }) => {
         padding: "20px",
         position: "relative",
         overflow: "hidden",
-        transition: "transform 0.18s, box-shadow 0.18s",
         cursor: to ? "pointer" : "default",
+        height: "100%",
+        boxSizing: "border-box",
+        transition: "transform 0.18s, box-shadow 0.18s",
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.transform = "translateY(-2px)";
@@ -29,19 +31,23 @@ const StatCard = ({ icon, label, value, color, sub, to }) => {
       }}
     >
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "2px", background: `linear-gradient(90deg, ${color}, transparent)` }} />
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+      <div style={{ display: "flex", flexDirection: "column", height: "100%", justifyContent: "space-between" }}>
         <div>
-          <p style={{ fontSize: "11px", color: "var(--color-text-muted)", fontWeight: 600, marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</p>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "8px" }}>
+            <p style={{ fontSize: "11px", color: "var(--color-text-muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</p>
+            <div style={{ width: "32px", height: "32px", borderRadius: "8px", backgroundColor: `${color}18`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px" }}>
+              {icon}
+            </div>
+          </div>
           <p style={{ fontSize: "28px", fontWeight: 800, color: "#fff", lineHeight: 1 }}>{value}</p>
-          {sub && <p style={{ fontSize: "11px", color, marginTop: "4px", fontWeight: 600 }}>{sub}</p>}
         </div>
-        <div style={{ width: "42px", height: "42px", borderRadius: "12px", backgroundColor: `${color}18`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px" }}>
-          {icon}
+        <div style={{ marginTop: "12px", minHeight: "16px" }}>
+          {sub && <p style={{ fontSize: "11px", color, fontWeight: 600 }}>{sub}</p>}
         </div>
       </div>
     </div>
   );
-  return to ? <Link to={to} style={{ textDecoration: "none" }}>{inner}</Link> : inner;
+  return to ? <Link to={to} style={{ textDecoration: "none", display: "block", height: "100%" }}>{inner}</Link> : <div style={{ height: "100%" }}>{inner}</div>;
 };
 
 // ─── Quick Nav Card ─────────────────────────────────────────────────────────────
@@ -107,7 +113,7 @@ const AdminDashboard = () => {
           {/* ── User Stats ─────────────────────────────────────────────────── */}
           <div>
             <h2 style={{ fontSize: "12px", fontWeight: 700, color: "var(--color-text-muted)", marginBottom: "14px", textTransform: "uppercase", letterSpacing: "0.06em" }}>User Overview</h2>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: "12px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
               <StatCard icon="👥" label="Total Users" value={s?.users.total ?? 0} color="#6366f1" to="/admin/users" />
               <StatCard icon="🧑" label="Customers" value={s?.users.customers ?? 0} color="#06b6d4" to="/admin/users?role=customer" />
               <StatCard icon="🔧" label="Providers" value={s?.users.providers ?? 0} color="#8b5cf6" to="/admin/providers" />
@@ -119,7 +125,7 @@ const AdminDashboard = () => {
           {/* ── Booking Stats ───────────────────────────────────────────────── */}
           <div>
             <h2 style={{ fontSize: "12px", fontWeight: 700, color: "var(--color-text-muted)", marginBottom: "14px", textTransform: "uppercase", letterSpacing: "0.06em" }}>Booking Overview</h2>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: "12px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
               <StatCard icon="📋" label="Total Bookings" value={s?.bookings.total ?? 0} color="#6366f1" to="/admin/bookings" />
               <StatCard icon="⏳" label="Pending" value={s?.bookings.pending ?? 0} color="#f59e0b" to="/admin/bookings?status=pending" sub={s?.bookings.pending > 0 ? "Needs attention" : null} />
               <StatCard icon="🔧" label="In Progress" value={s?.bookings.in_progress ?? 0} color="#8b5cf6" />

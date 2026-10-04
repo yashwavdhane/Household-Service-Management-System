@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
-import { fetchAdminUsers, updateUserStatus } from "../../api/adminApi";
+import { fetchAdminUsers, updateUserStatus, deleteUser } from "../../api/adminApi";
 import DashboardShell from "../../components/common/DashboardShell";
 import { LoadingSpinner, ErrorMessage, EmptyState, ConfirmDialog } from "../../components/common/UIHelpers";
 
@@ -58,6 +58,20 @@ const UserRow = ({ user, onToggle, toggling }) => {
         >
           {toggling === user._id ? "…" : user.isActive ? "Deactivate" : "Activate"}
         </button>
+        <button
+          onClick={() => onToggle({ ...user, action: "delete" })}
+          disabled={toggling === user._id}
+          style={{
+            padding: "5px 12px", borderRadius: "7px", fontSize: "11px", fontWeight: 600,
+            border: "1px solid rgba(239,68,68,0.4)",
+            backgroundColor: "rgba(239,68,68,0.1)",
+            color: "#ef4444", marginLeft: "6px",
+            cursor: toggling === user._id ? "not-allowed" : "pointer",
+            fontFamily: "inherit", opacity: toggling === user._id ? 0.6 : 1,
+          }}
+        >
+          {toggling === user._id ? "…" : "Delete"}
+        </button>
       </div>
     </div>
   );
@@ -101,13 +115,20 @@ const ManageUsers = () => {
   const handleToggle = async () => {
     if (!confirmUser) return;
     setToggling(confirmUser._id);
+    const isDelete = confirmUser.action === "delete";
+    const userToProcess = confirmUser;
     setConfirmUser(null);
     try {
-      await updateUserStatus(confirmUser._id, !confirmUser.isActive);
-      flash(`User ${confirmUser.isActive ? "deactivated" : "activated"} successfully.`);
+      if (isDelete) {
+        const { data } = await deleteUser(userToProcess._id);
+        flash(data.message || `User deleted successfully.`);
+      } else {
+        await updateUserStatus(userToProcess._id, !userToProcess.isActive);
+        flash(`User ${userToProcess.isActive ? "deactivated" : "activated"} successfully.`);
+      }
       load();
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to update user status.");
+      setError(err.response?.data?.message || `Failed to ${isDelete ? 'delete' : 'update'} user.`);
     } finally { setToggling(null); }
   };
 
@@ -179,11 +200,13 @@ const ManageUsers = () => {
 
       <ConfirmDialog
         isOpen={!!confirmUser}
-        title={confirmUser?.isActive ? "Deactivate User?" : "Activate User?"}
-        message={`This will ${confirmUser?.isActive ? "deactivate" : "activate"} the account of "${confirmUser?.name}". ${confirmUser?.isActive ? "They will be immediately logged out of all sessions." : ""}`}
+        title={confirmUser?.action === "delete" ? "Delete User?" : confirmUser?.isActive ? "Deactivate User?" : "Activate User?"}
+        message={confirmUser?.action === "delete"
+          ? `This will permanently delete or deactivate "${confirmUser?.name}" based on their history. This cannot be easily undone.`
+          : `This will ${confirmUser?.isActive ? "deactivate" : "activate"} the account of "${confirmUser?.name}". ${confirmUser?.isActive ? "They will be immediately logged out of all sessions." : ""}`}
         onConfirm={handleToggle}
         onCancel={() => setConfirmUser(null)}
-        danger={confirmUser?.isActive}
+        danger={confirmUser?.action === "delete" || confirmUser?.isActive}
       />
     </DashboardShell>
   );

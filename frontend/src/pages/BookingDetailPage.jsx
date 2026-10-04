@@ -141,8 +141,8 @@ const BookingDetailPage = () => {
                   { label: "Time", value: b.bookingTime, icon: "🕐" },
                   { label: "Address", value: b.address, icon: "📍" },
                   { label: "Booked On", value: fmtDt(b.createdAt), icon: "🗓️" },
-                  ...(b.estimatedPrice != null ? [{ label: "Estimated Price", value: `₹${b.estimatedPrice}`, icon: "💰" }] : []),
-                  ...(b.finalPrice != null ? [{ label: "Final Price", value: `₹${b.finalPrice}`, icon: "✅" }] : []),
+                  ...(b.estimatedPrice != null ? [{ label: "Estimated Price (Pay on completion)", value: `₹${b.estimatedPrice}`, icon: "💰" }] : []),
+                  ...(b.finalPrice != null ? [{ label: "Final Price (Cash on Delivery)", value: `₹${b.finalPrice}`, icon: "✅" }] : []),
                 ].map((row) => (
                   <div key={row.label} style={{
                     backgroundColor: "rgba(15,23,42,0.4)", borderRadius: "10px", padding: "12px 14px",
@@ -151,6 +151,16 @@ const BookingDetailPage = () => {
                     <p style={{ fontSize: "14px", color: "var(--color-text)", fontWeight: 500 }}>{row.value}</p>
                   </div>
                 ))}
+              </div>
+
+              {/* Payment Clarification */}
+              <div style={{ marginTop: "16px", padding: "14px", backgroundColor: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.2)", borderRadius: "10px" }}>
+                <p style={{ fontSize: "12px", fontWeight: 700, color: "#10b981", marginBottom: "6px", display: "flex", alignItems: "center", gap: "6px" }}>
+                  <span>💵</span> Payment Method: Cash on Delivery (COD)
+                </p>
+                <p style={{ fontSize: "13px", color: "var(--color-text)", lineHeight: 1.5 }}>
+                  Payments are settled directly between the customer and the provider <strong>after</strong> the service is successfully completed. Do not make any advance payments on this platform.
+                </p>
               </div>
 
               {b.description && (

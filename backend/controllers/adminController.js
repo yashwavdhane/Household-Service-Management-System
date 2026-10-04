@@ -174,6 +174,66 @@ const updateUserStatus = async (req, res) => {
     user: user.toPublicJSON(),
   });
 };
+// ═══════════════════════════════════════════════════════════════════════════════
+// DELETE /api/admin/users/:id
+// @desc   Delete a user (soft delete if they have history, hard delete otherwise)
+// @access Admin only
+// ═══════════════════════════════════════════════════════════════════════════════
+const deleteUser = async (req, res) => {
+  const user = await User.findById(req.params.id);
+  if (!user) {
+    res.status(404);
+    throw new Error("User not found");
+  }
+
+  // Prevent admin from deleting themselves
+  if (user._id.toString() === req.user._id.toString()) {
+    res.status(400);
+    throw new Error("You cannot delete your own account");
+  }
+
+  // Check relationships for historical records
+  const [customerBookings, providerBookings] = await Promise.all([
+    Booking.countDocuments({ customerId: user._id }),
+    user.role === "provider" ? Booking.countDocuments({ providerId: user._id }) : 0
+  ]);
+
+  const hasHistory = customerBookings > 0 || providerBookings > 0;
+
+  if (hasHistory) {
+    // Soft delete (deactivate)
+    user.isActive = false;
+    await user.save();
+    return res.status(200).json({
+      success: true,
+      message: "User deactivated successfully (historical records exist).",
+      action: "deactivated",
+    });
+  } else {
+    // Hard delete
+    // Always clean up associated records, regardless of role, to prevent orphaned data
+    
+    // 1. Delete all notifications for this user
+    const Notification = require("../models/Notification");
+    await Notification.deleteMany({ userId: user._id });
+
+    // 2. Delete ProviderProfile if it exists (using deleteMany to handle any duplicates)
+    await ProviderProfile.deleteMany({ userId: user._id });
+
+    // 3. Delete ProviderServices if they exist
+    const ProviderService = require("../models/ProviderService");
+    await ProviderService.deleteMany({ providerId: user._id });
+
+    // 4. Finally, delete the User record
+    await User.findByIdAndDelete(user._id);
+    
+    return res.status(200).json({
+      success: true,
+      message: "User deleted successfully.",
+      action: "deleted",
+    });
+  }
+};
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // GET /api/admin/providers
@@ -317,6 +377,12 @@ const getAnalytics = async (req, res) => {
     bookingsByCategory,
     usersByMonth,
     revenueByMonth,
+    totalUsers,
+    totalCustomers,
+    totalProviders,
+    activeProviders,
+    verifiedProviders,
+    inactiveUsers,
   ] = await Promise.all([
     // Bookings created per month (last 6 months)
     Booking.aggregate([
@@ -354,7 +420,7 @@ const getAnalytics = async (req, res) => {
           as: "category",
         },
       },
-      { $unwind: { path: "$category", preserveNullAndEmpty: true } },
+      { $unwind: { path: "$category", preserveNullAndEmptyArrays: true } },
       {
         $project: {
           name: { $ifNull: ["$category.name", "Unknown"] },
@@ -393,6 +459,13 @@ const getAnalytics = async (req, res) => {
       },
       { $sort: { "_id.year": 1, "_id.month": 1 } },
     ]),
+
+    User.countDocuments(),
+    User.countDocuments({ role: "customer" }),
+    User.countDocuments({ role: "provider" }),
+    ProviderProfile.countDocuments({ availability: true }),
+    ProviderProfile.countDocuments({ isVerified: true }),
+    User.countDocuments({ isActive: false }),
   ]);
 
   // ── Build a complete 6-month timeline ──────────────────────────────────────
@@ -429,8 +502,32 @@ const getAnalytics = async (req, res) => {
     color: statusColors[b._id] || "#64748b",
   }));
 
+  const bookingTotals = {
+    total: bookingsByStatus.reduce((acc, b) => acc + b.count, 0),
+    pending: bookingsByStatus.find(b => b._id === "pending")?.count || 0,
+    active: (bookingsByStatus.find(b => b._id === "accepted")?.count || 0) + (bookingsByStatus.find(b => b._id === "in_progress")?.count || 0),
+    completed: bookingsByStatus.find(b => b._id === "completed")?.count || 0,
+    cancelled: (bookingsByStatus.find(b => b._id === "cancelled")?.count || 0) + (bookingsByStatus.find(b => b._id === "rejected")?.count || 0),
+  };
+
+  const allTimeRevenue = revenueByMonth.reduce((acc, r) => acc + r.revenue, 0);
+
   res.status(200).json({
     success: true,
+    totals: {
+      users: {
+        total: totalUsers,
+        customers: totalCustomers,
+        providers: totalProviders,
+        activeProviders,
+        verifiedProviders,
+        inactive: inactiveUsers,
+      },
+      bookings: bookingTotals,
+      financial: {
+        totalRevenue: allTimeRevenue,
+      }
+    },
     bookingTimeline,
     revenueTimeline,
     userTimeline,
@@ -443,6 +540,7 @@ module.exports = {
   getDashboardStats,
   getUsers,
   updateUserStatus,
+  deleteUser,
   getProviders,
   updateProviderVerification,
   getAllBookings,

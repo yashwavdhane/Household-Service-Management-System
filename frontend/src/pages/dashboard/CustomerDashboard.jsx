@@ -19,6 +19,8 @@ const StatCard = ({ icon, label, value, accent, subLabel, to }) => {
         cursor: to ? "pointer" : "default",
         position: "relative",
         overflow: "hidden",
+        height: "100%",
+        boxSizing: "border-box",
       }}
       onMouseEnter={(e) => {
         if (to) {
@@ -67,8 +69,8 @@ const StatCard = ({ icon, label, value, accent, subLabel, to }) => {
   );
 
   return to
-    ? <Link to={to} style={{ textDecoration: "none" }}>{inner}</Link>
-    : inner;
+    ? <Link to={to} style={{ textDecoration: "none", display: "block", height: "100%" }}>{inner}</Link>
+    : <div style={{ height: "100%" }}>{inner}</div>;
 };
 
 // ─── Quick Action Button ──────────────────────────────────────────────────────
@@ -309,7 +311,7 @@ const CustomerDashboard = () => {
             <h2 style={{ fontSize: "14px", fontWeight: 700, color: "var(--color-text-muted)", marginBottom: "14px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
               Booking Overview
             </h2>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))", gap: "14px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
               <StatCard
                 icon="📋"
                 label="Total Bookings"
@@ -349,13 +351,6 @@ const CustomerDashboard = () => {
                 accent="#94a3b8"
                 to="/my-bookings"
                 subLabel="By you"
-              />
-              <StatCard
-                icon="💰"
-                label="Total Spent"
-                value={`₹${stats?.totalSpent ?? 0}`}
-                accent="#06b6d4"
-                subLabel="On completed services"
               />
             </div>
           </div>

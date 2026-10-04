@@ -29,6 +29,27 @@ const bookingSchema = new mongoose.Schema(
       ref: "ServiceCategory",
       required: [true, "Service category is required"],
     },
+    // ── Optional: snapshot of the specific ProviderService chosen ────────────
+    // Stored as a snapshot so historical bookings are unaffected by price changes
+    providerServiceId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "ProviderService",
+      default: null,
+    },
+    // Snapshot fields — written at booking creation, never auto-updated
+    serviceNameSnapshot: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    pricingTypeSnapshot: {
+      type: String,
+      enum: {
+        values: ["per_visit", "per_hour", "fixed", ""],
+        message: "Invalid pricing type",
+      },
+      default: "",
+    },
     bookingDate: {
       type: String, // stored as "YYYY-MM-DD" string for simplicity
       required: [true, "Booking date is required"],
@@ -75,6 +96,21 @@ const bookingSchema = new mongoose.Schema(
       default: "",
       maxlength: [500, "Cancellation reason cannot exceed 500 characters"],
     },
+    // ── Payment tracking (separate from booking status) ───────────────────────
+    paymentStatus: {
+      type: String,
+      enum: {
+        values: ["not_required", "pending", "paid", "failed", "refunded"],
+        message: "Invalid payment status",
+      },
+      default: "not_required",
+    },
+    paymentNote: {
+      type: String,
+      trim: true,
+      default: "",
+      maxlength: [500, "Payment note cannot exceed 500 characters"],
+    },
   },
   { timestamps: true }
 );
@@ -83,6 +119,7 @@ const bookingSchema = new mongoose.Schema(
 bookingSchema.index({ customerId: 1, createdAt: -1 });
 bookingSchema.index({ providerId: 1, createdAt: -1 });
 bookingSchema.index({ status: 1 });
+bookingSchema.index({ paymentStatus: 1 });
 
 // ─── Static: validate a status transition ────────────────────────────────────
 bookingSchema.statics.canTransition = function (currentStatus, newStatus, role) {

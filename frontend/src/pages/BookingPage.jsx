@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { fetchProviderById } from "../api/providerApi";
 import { fetchCategories } from "../api/categoryApi";
 import { createBooking } from "../api/bookingApi";
+import { fetchProviderServices } from "../api/providerServiceApi";
 import { LoadingSpinner, ErrorMessage, Badge } from "../components/common/UIHelpers";
 import { useAuth } from "../context/AuthContext";
 
@@ -22,38 +23,49 @@ const BookingPage = () => {
 
   const [provider, setProvider] = useState(null);
   const [categories, setCategories] = useState([]);
+  const [providerServices, setProviderServices] = useState([]); // provider-specific offerings
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
   const [form, setForm] = useState({
     serviceCategoryId: "",
+    providerServiceId: "", // optional — selected ProviderService offering
     bookingDate: "",
     bookingTime: "",
-    address: "",
+    address: user?.address ? [user.address.flatStreet, user.address.area, user.address.city, user.address.state, user.address.pinCode].filter(Boolean).join(", ") : "",
     description: "",
-    estimatedPrice: "",
   });
 
   const [step, setStep] = useState(1); // 1 = details, 2 = confirm
 
-  // Load provider + available categories
+  // Load provider + available categories + provider services
   useEffect(() => {
     const load = async () => {
       setLoading(true);
       try {
-        const [pRes, cRes] = await Promise.all([
+        const [pRes, cRes, svcRes] = await Promise.all([
           fetchProviderById(providerId),
           fetchCategories(),
+          fetchProviderServices({ providerId, activeOnly: "true" }),
         ]);
         setProvider(pRes.data.provider);
-        // Only categories this provider offers
+        setProviderServices(svcRes.data.services || []);
+        // Only show categories this provider offers
         const providerCatIds = pRes.data.provider.serviceCategories?.map((c) => c._id) || [];
-        const filtered = cRes.data.categories.filter((c) =>
-          providerCatIds.includes(c._id)
-        );
+        const filtered = cRes.data.categories.filter((c) => providerCatIds.includes(c._id));
         setCategories(filtered);
-        if (filtered.length === 1) setForm((p) => ({ ...p, serviceCategoryId: filtered[0]._id }));
+        if (filtered.length === 1) {
+          const catId = filtered[0]._id;
+          const matchingSvc = (svcRes.data.services || []).find(
+            (s) => (s.serviceCategoryId?._id || s.serviceCategoryId) === catId
+          );
+          setForm((p) => ({
+            ...p,
+            serviceCategoryId: catId,
+            providerServiceId: matchingSvc?._id || "",
+          }));
+        }
       } catch (err) {
         setError(err.response?.data?.message || "Failed to load provider details.");
       } finally {
@@ -83,7 +95,11 @@ const BookingPage = () => {
         address: form.address.trim(),
         description: form.description.trim(),
       };
-      if (form.estimatedPrice) payload.estimatedPrice = parseFloat(form.estimatedPrice);
+      // Include the specific ProviderService if one was selected
+      if (form.providerServiceId) {
+        payload.providerServiceId = form.providerServiceId;
+        // NOTE: backend will use the service's price — we do NOT send estimatedPrice from frontend
+      }
 
       const { data } = await createBooking(payload);
       navigate(`/bookings/${data.booking._id}`, { state: { justCreated: true } });
@@ -98,6 +114,9 @@ const BookingPage = () => {
   const pUser = provider?.userId || {};
   const initials = pUser.name?.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2) || "?";
   const selectedCategory = categories.find((c) => c._id === form.serviceCategoryId);
+  const selectedService = providerServices.find((s) =>
+    (s.serviceCategoryId?._id || s.serviceCategoryId) === form.serviceCategoryId
+  );
 
   const inputStyle = {
     width: "100%", padding: "11px 14px", borderRadius: "10px",
@@ -213,11 +232,24 @@ const BookingPage = () => {
                       <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                         {categories.map((cat) => {
                           const sel = form.serviceCategoryId === cat._id || form.serviceCategoryId === cat.id;
+                          // Find provider-specific service for this category
+                          const catSvc = providerServices.find(
+                            (s) => (s.serviceCategoryId?._id || s.serviceCategoryId) === cat._id
+                          );
                           return (
                             <button
                               key={cat._id}
                               type="button"
-                              onClick={() => setForm((p) => ({ ...p, serviceCategoryId: cat._id }))}
+                              onClick={() => {
+                                const matchingSvc = providerServices.find(
+                                  (s) => (s.serviceCategoryId?._id || s.serviceCategoryId) === cat._id
+                                );
+                                setForm((p) => ({
+                                  ...p,
+                                  serviceCategoryId: cat._id,
+                                  providerServiceId: matchingSvc?._id || "",
+                                }));
+                              }}
                               style={{
                                 padding: "8px 16px", borderRadius: "10px",
                                 border: `1px solid ${sel ? "var(--color-primary)" : "var(--color-surface-2)"}`,
@@ -225,9 +257,16 @@ const BookingPage = () => {
                                 color: sel ? "#fff" : "var(--color-text-muted)",
                                 fontSize: "13px", cursor: "pointer", fontFamily: "inherit",
                                 transition: "all 0.15s",
+                                display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "3px",
+                                textAlign: "left",
                               }}
                             >
-                              {cat.image} {cat.name}
+                              <span>{cat.image} {cat.name}</span>
+                              {catSvc && (
+                                <span style={{ fontSize: "11px", color: sel ? "#a5b4fc" : "var(--color-text-muted)", fontWeight: 600 }}>
+                                  ₹{catSvc.price.toLocaleString("en-IN")} / {catSvc.pricingType === "per_visit" ? "visit" : catSvc.pricingType === "per_hour" ? "hr" : "fixed"}
+                                </span>
+                              )}
                             </button>
                           );
                         })}
@@ -329,7 +368,8 @@ const BookingPage = () => {
                   <div style={{ display: "flex", flexDirection: "column", gap: "14px", marginBottom: "24px" }}>
                     {[
                       { label: "Provider", value: pUser.name },
-                      { label: "Service", value: `${selectedCategory?.image} ${selectedCategory?.name}` },
+                      { label: "Service", value: selectedService ? `${selectedCategory?.image} ${selectedService.serviceName}` : `${selectedCategory?.image} ${selectedCategory?.name}` },
+                      ...(selectedService ? [{ label: "Price", value: `₹${selectedService.price.toLocaleString("en-IN")} (${selectedService.pricingType === "per_visit" ? "per visit" : selectedService.pricingType === "per_hour" ? "per hour" : "fixed price"})` }] : []),
                       { label: "Date", value: new Date(form.bookingDate + "T00:00:00").toLocaleDateString("en-IN", { weekday:"long", year:"numeric", month:"long", day:"numeric" }) },
                       { label: "Time", value: form.bookingTime },
                       { label: "Address", value: form.address },

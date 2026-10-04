@@ -11,15 +11,21 @@ const populateProvider = (query) =>
 // @desc   List providers with optional filtering
 // @access Public
 const getProviders = async (req, res) => {
-  const { category, serviceArea, rating, available } = req.query;
+  const { category, serviceArea, rating, available, pinCode, city } = req.query;
 
   const filter = {};
 
   // Filter by service category ID
   if (category) filter.serviceCategories = category;
 
-  // Filter by service area (case-insensitive partial match)
+  // Filter by service area (case-insensitive partial match on legacy field)
   if (serviceArea) filter.serviceArea = { $regex: serviceArea, $options: "i" };
+
+  // Filter by PIN code (exact match on structured address)
+  if (pinCode) filter["address.pinCode"] = pinCode.trim();
+
+  // Filter by city (case-insensitive)
+  if (city) filter["address.city"] = { $regex: city.trim(), $options: "i" };
 
   // Filter by minimum average rating
   if (rating) filter.averageRating = { $gte: parseFloat(rating) };
@@ -71,27 +77,47 @@ const getMyProfile = async (req, res) => {
 };
 
 // ─── PUT /api/providers/profile ──────────────────────────────────────────────
-// @desc   Create or update provider's professional profile
+// @desc   Create or update provider's professional profile (including address)
 // @access Provider only
 const updateMyProfile = async (req, res) => {
-  const { serviceCategories, skills, experience, description, serviceArea } = req.body;
+  const {
+    serviceCategories,
+    skills,
+    experience,
+    description,
+    serviceArea,
+    // Structured address fields
+    flatStreet,
+    area,
+    city,
+    state,
+    pinCode,
+    landmark,
+  } = req.body;
 
   const updateData = {};
+
   if (serviceCategories !== undefined) {
     if (Array.isArray(serviceCategories)) {
-      updateData.serviceCategories = serviceCategories.map(c => typeof c === 'object' && c !== null ? (c._id || c.id) : c).filter(Boolean);
-    } else if (typeof serviceCategories === 'string') {
-      updateData.serviceCategories = serviceCategories.split(',').map(s => s.trim()).filter(Boolean);
+      updateData.serviceCategories = serviceCategories
+        .map((c) => (typeof c === "object" && c !== null ? c._id || c.id : c))
+        .filter(Boolean);
+    } else if (typeof serviceCategories === "string") {
+      updateData.serviceCategories = serviceCategories
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
     } else {
       updateData.serviceCategories = [];
     }
   }
+
   if (skills !== undefined) {
-    // Accept comma-separated string or array
     updateData.skills = Array.isArray(skills)
       ? skills.map((s) => s.trim()).filter(Boolean)
       : skills.split(",").map((s) => s.trim()).filter(Boolean);
   }
+
   if (experience !== undefined) {
     const exp = parseInt(experience);
     if (isNaN(exp) || exp < 0) {
@@ -100,8 +126,24 @@ const updateMyProfile = async (req, res) => {
     }
     updateData.experience = exp;
   }
+
   if (description !== undefined) updateData.description = description.trim();
   if (serviceArea !== undefined) updateData.serviceArea = serviceArea.trim();
+
+  // ── Handle structured address fields ─────────────────────────────────────
+  if (flatStreet !== undefined) updateData["address.flatStreet"] = flatStreet.trim();
+  if (area !== undefined) updateData["address.area"] = area.trim();
+  if (city !== undefined) updateData["address.city"] = city.trim();
+  if (state !== undefined) updateData["address.state"] = state.trim();
+  if (landmark !== undefined) updateData["address.landmark"] = landmark.trim();
+  if (pinCode !== undefined) {
+    const pin = pinCode.trim();
+    if (pin !== "" && !/^\d{6}$/.test(pin)) {
+      res.status(400);
+      throw new Error("PIN code must be exactly 6 digits");
+    }
+    updateData["address.pinCode"] = pin;
+  }
 
   const profile = await ProviderProfile.findOneAndUpdate(
     { userId: req.user._id },

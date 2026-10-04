@@ -20,9 +20,18 @@ const userSchema = new mongoose.Schema(
     },
     phone: {
       type: String,
+      required: [true, "Phone number is required"],
+      unique: true,
       trim: true,
       match: [/^[0-9]{10}$/, "Phone number must be exactly 10 digits"],
-      default: "",
+    },
+    resetOtp: {
+      type: String,
+      default: null,
+    },
+    resetOtpExpiry: {
+      type: Date,
+      default: null,
     },
     password: {
       type: String,
@@ -45,6 +54,18 @@ const userSchema = new mongoose.Schema(
     isActive: {
       type: Boolean,
       default: true,
+    },
+    address: {
+      flatStreet: { type: String, trim: true, default: "" },
+      area: { type: String, trim: true, default: "" },
+      city: { type: String, trim: true, default: "" },
+      state: { type: String, trim: true, default: "" },
+      pinCode: {
+        type: String,
+        trim: true,
+        match: [/^\d{6}$/, "PIN code must be exactly 6 digits"],
+        default: "",
+      },
     },
   },
   {
@@ -75,6 +96,7 @@ userSchema.methods.toPublicJSON = function () {
     phone: this.phone,
     role: this.role,
     profileImage: this.profileImage,
+    address: this.address,
     isActive: this.isActive,
     createdAt: this.createdAt,
     updatedAt: this.updatedAt,

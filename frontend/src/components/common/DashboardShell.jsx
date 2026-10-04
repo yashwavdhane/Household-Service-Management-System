@@ -17,6 +17,8 @@ const NAV_LINKS = {
     { to: "/dashboard/provider", label: "Dashboard", icon: "📊" },
     { to: "/provider/profile", label: "My Profile", icon: "👤" },
     { to: "/provider/bookings", label: "Booking Requests", icon: "📋" },
+    { to: "/provider/services", label: "My Services", icon: "🛠️" },
+    { to: "/notifications", label: "Notifications", icon: "🔔" },
   ],
   admin: [
     { to: "/dashboard/admin", label: "Dashboard", icon: "📊" },
@@ -25,6 +27,8 @@ const NAV_LINKS = {
     { to: "/admin/bookings", label: "Bookings", icon: "📋" },
     { to: "/admin/categories", label: "Categories", icon: "🏷️" },
     { to: "/admin/analytics", label: "Analytics", icon: "📈" },
+    { to: "/admin/communications", label: "Communications", icon: "💬" },
+    { to: "/admin/settings", label: "Settings", icon: "⚙️" },
   ],
 };
 

@@ -64,13 +64,44 @@ const AnalyticsPage = () => {
         {/* Header */}
         <div>
           <h1 style={{ fontSize: "22px", fontWeight: 800, color: "#fff", marginBottom: "4px" }}>Platform Analytics</h1>
-          <p style={{ fontSize: "13px", color: "var(--color-text-muted)" }}>Last 6 months · All data from live database</p>
+          <p style={{ fontSize: "13px", color: "var(--color-text-muted)" }}>Platform-wide statistics and trends</p>
         </div>
 
         {error && <ErrorMessage message={error} onRetry={load} />}
 
         {loading ? <LoadingSpinner message="Crunching numbers…" /> : (
           <>
+            {/* ── Key Metrics (from totals) ─────────────────────────────── */}
+            {data?.totals && (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "16px", marginBottom: "8px" }}>
+                <div style={{ backgroundColor: "var(--color-surface)", border: "1px solid var(--color-surface-2)", borderRadius: "16px", padding: "16px" }}>
+                  <p style={{ fontSize: "11px", color: "var(--color-text-muted)", fontWeight: 600, textTransform: "uppercase", marginBottom: "8px" }}>Total Users</p>
+                  <p style={{ fontSize: "24px", fontWeight: 800, color: "#fff" }}>{data.totals.users.total}</p>
+                  <p style={{ fontSize: "11px", color: "#06b6d4", marginTop: "4px" }}>{data.totals.users.customers} Cust · {data.totals.users.providers} Prov</p>
+                </div>
+                <div style={{ backgroundColor: "var(--color-surface)", border: "1px solid var(--color-surface-2)", borderRadius: "16px", padding: "16px" }}>
+                  <p style={{ fontSize: "11px", color: "var(--color-text-muted)", fontWeight: 600, textTransform: "uppercase", marginBottom: "8px" }}>Provider Status</p>
+                  <p style={{ fontSize: "24px", fontWeight: 800, color: "#fff" }}>{data.totals.users.activeProviders}</p>
+                  <p style={{ fontSize: "11px", color: "#10b981", marginTop: "4px" }}>Available · {data.totals.users.verifiedProviders} Verified</p>
+                </div>
+                <div style={{ backgroundColor: "var(--color-surface)", border: "1px solid var(--color-surface-2)", borderRadius: "16px", padding: "16px" }}>
+                  <p style={{ fontSize: "11px", color: "var(--color-text-muted)", fontWeight: 600, textTransform: "uppercase", marginBottom: "8px" }}>Total Bookings</p>
+                  <p style={{ fontSize: "24px", fontWeight: 800, color: "#fff" }}>{data.totals.bookings.total}</p>
+                  <p style={{ fontSize: "11px", color: "#8b5cf6", marginTop: "4px" }}>{data.totals.bookings.completed} Completed</p>
+                </div>
+                <div style={{ backgroundColor: "var(--color-surface)", border: "1px solid var(--color-surface-2)", borderRadius: "16px", padding: "16px" }}>
+                  <p style={{ fontSize: "11px", color: "var(--color-text-muted)", fontWeight: 600, textTransform: "uppercase", marginBottom: "8px" }}>Booking Pipeline</p>
+                  <p style={{ fontSize: "24px", fontWeight: 800, color: "#fff" }}>{data.totals.bookings.active}</p>
+                  <p style={{ fontSize: "11px", color: "#f59e0b", marginTop: "4px" }}>Active · {data.totals.bookings.pending} Pending</p>
+                </div>
+                <div style={{ backgroundColor: "var(--color-surface)", border: "1px solid var(--color-surface-2)", borderRadius: "16px", padding: "16px" }}>
+                  <p style={{ fontSize: "11px", color: "var(--color-text-muted)", fontWeight: 600, textTransform: "uppercase", marginBottom: "8px" }}>Total Revenue</p>
+                  <p style={{ fontSize: "24px", fontWeight: 800, color: "#fff" }}>₹{data.totals.financial.totalRevenue.toLocaleString("en-IN")}</p>
+                  <p style={{ fontSize: "11px", color: "#10b981", marginTop: "4px" }}>All-time confirmed</p>
+                </div>
+              </div>
+            )}
+
             {/* ── Row 1: Bookings + Revenue ─────────────────────────────── */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "20px" }}>
 

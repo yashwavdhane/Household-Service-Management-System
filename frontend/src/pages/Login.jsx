@@ -172,15 +172,23 @@ const Login = () => {
 
           {/* Password */}
           <div style={{ marginBottom: "24px" }}>
-            <label
-              htmlFor="login-password"
-              style={{
-                display: "block", fontSize: "13px", fontWeight: 500,
-                color: "var(--color-text-muted)", marginBottom: "7px",
-              }}
-            >
-              Password
-            </label>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "7px" }}>
+              <label
+                htmlFor="login-password"
+                style={{
+                  display: "block", fontSize: "13px", fontWeight: 500,
+                  color: "var(--color-text-muted)",
+                }}
+              >
+                Password
+              </label>
+              <Link
+                to="/forgot-password"
+                style={{ fontSize: "12px", color: "var(--color-primary-light)", textDecoration: "none", fontWeight: 500 }}
+              >
+                Forgot Password?
+              </Link>
+            </div>
             <div style={{ position: "relative" }}>
               <input
                 id="login-password"

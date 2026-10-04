@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const User = require("../models/User");
 const generateToken = require("../utils/generateToken");
 
@@ -17,6 +18,10 @@ const register = async (req, res) => {
   const { name, email, phone, password, role } = req.body;
 
   // ── Validation ──
+  if (!name || !email || !password || !phone) {
+    res.status(400);
+    throw new Error('Name, email, phone, and password are required');
+  }
   if (!name || !email || !password) {
     res.status(400);
     throw new Error("Name, email, and password are required");
@@ -33,17 +38,17 @@ const register = async (req, res) => {
   const assignedRole = role && allowedRoles.includes(role) ? role : "customer";
 
   // Check for duplicate email
-  const existingUser = await User.findOne({ email: email.toLowerCase().trim() });
+  const existingUser = await User.findOne({ $or: [{ email: email.toLowerCase().trim() }, { phone: phone.trim() }] });
   if (existingUser) {
     res.status(400);
-    throw new Error("An account with this email already exists");
+    throw new Error("An account with this email or phone already exists");
   }
 
   // Create user (password hashed by pre-save hook)
   const user = await User.create({
     name: name.trim(),
     email: email.toLowerCase().trim(),
-    phone: phone?.trim() || "",
+    phone: phone.trim(),
     password,
     role: assignedRole,
   });
@@ -113,6 +118,18 @@ const updateProfile = async (req, res) => {
   if (phone !== undefined) user.phone = phone.trim();
   if (profileImage !== undefined) user.profileImage = profileImage.trim();
 
+  // ── Update address fields (Customer) ──
+  const { flatStreet, area, city, state, pinCode } = req.body;
+  if (flatStreet !== undefined || area !== undefined || city !== undefined || state !== undefined || pinCode !== undefined) {
+    user.address = {
+      flatStreet: flatStreet !== undefined ? flatStreet.trim() : user.address?.flatStreet || "",
+      area: area !== undefined ? area.trim() : user.address?.area || "",
+      city: city !== undefined ? city.trim() : user.address?.city || "",
+      state: state !== undefined ? state.trim() : user.address?.state || "",
+      pinCode: pinCode !== undefined ? pinCode.trim() : user.address?.pinCode || "",
+    };
+  }
+
   // ── Password change (optional) ──
   if (newPassword) {
     if (!currentPassword) {
@@ -140,4 +157,70 @@ const updateProfile = async (req, res) => {
   });
 };
 
-module.exports = { register, login, getProfile, updateProfile };
+
+// ─── @route  POST /api/auth/forgot-password ──────────────────────────────────
+// @desc   Generate OTP for forgot password using mobile number
+// @access Public
+const forgotPassword = async (req, res) => {
+  const { phone } = req.body;
+  if (!phone) {
+    res.status(400);
+    throw new Error('Phone number is required');
+  }
+
+  const user = await User.findOne({ phone: phone.trim() });
+  if (!user) {
+    res.status(404);
+    throw new Error('No user found with this phone number');
+  }
+
+  // Generate 6 digit OTP
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  
+  // Set expiry to 10 minutes
+  user.resetOtp = otp;
+  user.resetOtpExpiry = Date.now() + 10 * 60 * 1000;
+  await user.save();
+
+  // Simulate sending SMS
+  console.log(`[OTP SMS SIMULATION] To: ${phone} | OTP: ${otp}`);
+
+  res.status(200).json({
+    success: true,
+    message: 'OTP sent to mobile number',
+  });
+};
+
+// ─── @route  POST /api/auth/reset-password ───────────────────────────────────
+// @desc   Reset password using OTP
+// @access Public
+const resetPassword = async (req, res) => {
+  const { phone, otp, newPassword } = req.body;
+  if (!phone || !otp || !newPassword) {
+    res.status(400);
+    throw new Error('Phone, OTP, and new password are required');
+  }
+
+  const user = await User.findOne({
+    phone: phone.trim(),
+    resetOtp: otp,
+    resetOtpExpiry: { $gt: Date.now() },
+  });
+
+  if (!user) {
+    res.status(400);
+    throw new Error('Invalid or expired OTP');
+  }
+
+  user.password = newPassword;
+  user.resetOtp = undefined;
+  user.resetOtpExpiry = undefined;
+  await user.save();
+
+  res.status(200).json({
+    success: true,
+    message: 'Password reset successful',
+  });
+};
+
+module.exports = { register, login, getProfile, updateProfile, forgotPassword, resetPassword };

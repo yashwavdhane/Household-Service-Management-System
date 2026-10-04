@@ -21,9 +21,13 @@ router.get("/dashboard", getDashboardStats);
 // ── Analytics ──────────────────────────────────────────────────────────────────
 router.get("/analytics", getAnalytics);
 
+// ── Communications ─────────────────────────────────────────────────────────────
+router.get("/communications", require("../controllers/messageController").getAdminCommunications);
+
 // ── Users ──────────────────────────────────────────────────────────────────────
 router.get("/users", getUsers);
 router.put("/users/:id/status", updateUserStatus);
+router.delete("/users/:id", require("../controllers/adminController").deleteUser);
 
 // ── Providers ─────────────────────────────────────────────────────────────────
 router.get("/providers", getProviders);
