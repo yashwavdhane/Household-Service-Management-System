@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const User = require("../models/User");
 const generateToken = require("../utils/generateToken");
+const { sendOtpEmail } = require("../utils/mailer");
 
 // ─── Helper: build auth response ─────────────────────────────────────────────
 const authResponse = (res, statusCode, user, token) => {
@@ -165,29 +166,39 @@ const forgotPassword = async (req, res) => {
   const { phone } = req.body;
   if (!phone) {
     res.status(400);
-    throw new Error('Phone number is required');
+    throw new Error("Phone number is required");
   }
 
   const user = await User.findOne({ phone: phone.trim() });
   if (!user) {
     res.status(404);
-    throw new Error('No user found with this phone number');
+    throw new Error("No user found with this phone number");
   }
 
-  // Generate 6 digit OTP
+  // Generate random 6-digit OTP
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
-  
-  // Set expiry to 10 minutes
-  user.resetOtp = otp;
-  user.resetOtpExpiry = Date.now() + 10 * 60 * 1000;
+
+  // Hash OTP with SHA-256 before storing in database
+  const hashedOtp = crypto.createHash("sha256").update(otp).digest("hex");
+
+  user.resetOtp = hashedOtp;
+  user.resetOtpExpiry = Date.now() + 10 * 60 * 1000; // 10 minutes
+  user.resetOtpAttempts = 0; // reset failed attempt counter
   await user.save();
 
-  // Simulate sending SMS
-  console.log(`[OTP SMS SIMULATION] To: ${phone} | OTP: ${otp}`);
+  // If user has an email, dispatch OTP email asynchronously
+  if (user.email) {
+    sendOtpEmail({ to: user.email, name: user.name, otp }).catch((err) =>
+      console.error("[Mailer] Failed to dispatch OTP email:", err.message)
+    );
+  }
+
+  // Console log simulation (essential for local dev / testing)
+  console.log(`\n🔑 [OTP DISPATCH] To Phone: ${phone} | User: ${user.name} | OTP: ${otp} (valid for 10m)\n`);
 
   res.status(200).json({
     success: true,
-    message: 'OTP sent to mobile number',
+    message: "OTP sent to your registered mobile number and email",
   });
 };
 
@@ -198,28 +209,66 @@ const resetPassword = async (req, res) => {
   const { phone, otp, newPassword } = req.body;
   if (!phone || !otp || !newPassword) {
     res.status(400);
-    throw new Error('Phone, OTP, and new password are required');
+    throw new Error("Phone, OTP, and new password are required");
   }
 
-  const user = await User.findOne({
-    phone: phone.trim(),
-    resetOtp: otp,
-    resetOtpExpiry: { $gt: Date.now() },
-  });
+  // Explicitly select hidden OTP fields
+  const user = await User.findOne({ phone: phone.trim() }).select(
+    "+resetOtp +resetOtpExpiry +resetOtpAttempts +password"
+  );
 
-  if (!user) {
+  if (!user || !user.resetOtp || !user.resetOtpExpiry) {
     res.status(400);
-    throw new Error('Invalid or expired OTP');
+    throw new Error("No active OTP request found. Please request a new OTP");
   }
 
+  // Check if OTP has expired
+  if (new Date(user.resetOtpExpiry).getTime() < Date.now()) {
+    user.resetOtp = undefined;
+    user.resetOtpExpiry = undefined;
+    user.resetOtpAttempts = 0;
+    await user.save();
+    res.status(400);
+    throw new Error("OTP has expired. Please request a new OTP");
+  }
+
+  // Check if user exceeded max 5 attempts to prevent brute force
+  if (user.resetOtpAttempts >= 5) {
+    user.resetOtp = undefined;
+    user.resetOtpExpiry = undefined;
+    user.resetOtpAttempts = 0;
+    await user.save();
+    res.status(429);
+    throw new Error("Too many failed attempts. For security, please request a new OTP");
+  }
+
+  // Hash user-provided OTP and verify against database hash
+  const hashedInputOtp = crypto.createHash("sha256").update(String(otp).trim()).digest("hex");
+  if (user.resetOtp !== hashedInputOtp) {
+    user.resetOtpAttempts = (user.resetOtpAttempts || 0) + 1;
+    await user.save();
+    const attemptsLeft = 5 - user.resetOtpAttempts;
+    res.status(400);
+    throw new Error(
+      `Invalid OTP. ${attemptsLeft} attempt${attemptsLeft === 1 ? "" : "s"} remaining.`
+    );
+  }
+
+  if (newPassword.length < 6) {
+    res.status(400);
+    throw new Error("New password must be at least 6 characters");
+  }
+
+  // Update password and clear OTP fields
   user.password = newPassword;
   user.resetOtp = undefined;
   user.resetOtpExpiry = undefined;
+  user.resetOtpAttempts = 0;
   await user.save();
 
   res.status(200).json({
     success: true,
-    message: 'Password reset successful',
+    message: "Password reset successful. You can now log in with your new password.",
   });
 };
 

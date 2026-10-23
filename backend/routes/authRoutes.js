@@ -2,12 +2,13 @@ const express = require("express");
 const router = express.Router();
 const { register, login, getProfile, updateProfile, forgotPassword, resetPassword } = require("../controllers/authController");
 const { protect } = require("../middleware/auth");
+const { authLimiter, otpLimiter } = require("../middleware/rateLimiter");
 
 // ─── Public routes ────────────────────────────────────────────────────────────
-router.post("/register", register);
-router.post("/login", login);
-router.post("/forgot-password", forgotPassword);
-router.post("/reset-password", resetPassword);
+router.post("/register", authLimiter, register);
+router.post("/login", authLimiter, login);
+router.post("/forgot-password", otpLimiter, forgotPassword);
+router.post("/reset-password", otpLimiter, resetPassword);
 
 // ─── Protected routes (requires valid JWT) ────────────────────────────────────
 router.get("/profile", protect, getProfile);
