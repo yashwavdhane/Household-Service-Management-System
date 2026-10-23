@@ -1,8 +1,9 @@
 const mongoose = require('mongoose');
-require('dotenv').config();
-const ProviderProfile = require('./models/ProviderProfile');
-const ServiceCategory = require('./models/ServiceCategory');
-const User = require('./models/User');
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
+const ProviderProfile = require('../models/ProviderProfile');
+const ServiceCategory = require('../models/ServiceCategory');
+const User = require('../models/User');
 
 async function test() {
   await mongoose.connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/hsms_db');

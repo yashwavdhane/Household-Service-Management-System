@@ -1,9 +1,10 @@
 const mongoose = require('mongoose');
-require('dotenv').config();
-const User = require('./models/User');
-const ProviderProfile = require('./models/ProviderProfile');
-const ServiceCategory = require('./models/ServiceCategory');
-const Booking = require('./models/Booking');
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
+const User = require('../models/User');
+const ProviderProfile = require('../models/ProviderProfile');
+const ServiceCategory = require('../models/ServiceCategory');
+const Booking = require('../models/Booking');
 
 async function testE2E() {
   await mongoose.connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/hsms_db');
