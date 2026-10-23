@@ -314,9 +314,9 @@ const ForgotPassword = () => {
         </p>
       </div>
 
-      <style>{\`
+      <style>{`
         input::placeholder { color: #475569; }
-      \`}</style>
+      `}</style>
     </div>
   );
 };
