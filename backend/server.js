@@ -36,6 +36,17 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 // ─── Data Sanitization against NoSQL query injection ─────────────────────────
+// Express 5 makes req.query a getter-only property. Redefine it as a writable
+// property so express-mongo-sanitize can sanitize query parameters without throwing.
+app.use((req, res, next) => {
+  Object.defineProperty(req, "query", {
+    value: { ...req.query },
+    writable: true,
+    configurable: true,
+    enumerable: true,
+  });
+  next();
+});
 app.use(mongoSanitize());
 
 // ─── Global Rate Limiter ─────────────────────────────────────────────────────
