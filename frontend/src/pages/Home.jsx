@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import axiosInstance from "../api/axiosInstance";
 
 const Home = () => {
@@ -84,8 +85,8 @@ const Home = () => {
             </span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <a
-              href="/login"
+            <Link
+              to="/login"
               style={{
                 padding: "7px 18px",
                 fontSize: "14px",
@@ -96,9 +97,9 @@ const Home = () => {
               }}
             >
               Login
-            </a>
-            <a
-              href="/register"
+            </Link>
+            <Link
+              to="/register"
               style={{
                 padding: "7px 18px",
                 fontSize: "14px",
@@ -110,7 +111,7 @@ const Home = () => {
               }}
             >
               Get Started
-            </a>
+            </Link>
           </div>
         </div>
       </nav>
@@ -214,8 +215,8 @@ const Home = () => {
               marginBottom: "28px",
             }}
           >
-            <a
-              href="/register"
+            <Link
+              to="/register"
               style={{
                 padding: "12px 28px",
                 borderRadius: "10px",
@@ -230,9 +231,9 @@ const Home = () => {
               }}
             >
               Book a Service →
-            </a>
-            <a
-              href="/register?role=provider"
+            </Link>
+            <Link
+              to="/register?role=provider"
               style={{
                 padding: "12px 28px",
                 borderRadius: "10px",
@@ -246,7 +247,7 @@ const Home = () => {
               }}
             >
               Become a Provider
-            </a>
+            </Link>
           </div>
 
           {/* API Status Badge */}
