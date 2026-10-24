@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 // ── Public pages ──────────────────────────────────────────────────────────────
@@ -285,8 +285,8 @@ const AppRoutes = () => {
             <p style={{ color: "var(--color-text-muted)", fontSize: "16px", marginBottom: "28px" }}>
               This page doesn&apos;t exist
             </p>
-            <a
-              href="/"
+            <Link
+              to="/"
               style={{
                 padding: "12px 28px", borderRadius: "10px",
                 background: "linear-gradient(135deg, var(--color-primary), var(--color-primary-dark))",
@@ -294,7 +294,7 @@ const AppRoutes = () => {
               }}
             >
               Go Home
-            </a>
+            </Link>
           </div>
         }
       />
